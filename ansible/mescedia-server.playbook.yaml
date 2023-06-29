@@ -1,0 +1,269 @@
+---
+  # 
+  - name: setup mescedia-all (debian bookworm)
+    hosts: all
+    become: true
+    vars:
+        mygroup: "mescedia-system"
+    tasks:
+    
+    - name: create group
+      ansible.builtin.group:
+        name: "{{ mygroup }}"
+        state: present
+        gid: 12914
+
+    - name: ensure user "mescedia" exists with correct uid
+      ansible.builtin.user:
+        name: mescedia
+        state: present
+        shell: /usr/sbin/nologin
+        uid: 12914
+        groups: "{{ mygroup }}"
+        append: yes
+    
+    - name: create /usr/local/src/mescedia if it does not exist
+      ansible.builtin.file:
+        path: /usr/local/src/mescedia
+        state: directory
+        mode: '0755'
+    
+    - name: install base packages 
+      register: updatesys
+      apt:
+        update_cache: yes
+        name:
+          - build-essential
+          - tzdata
+          - mariadb-server
+          - tree
+          - git 
+          - vim
+          - htop
+          - screen
+          - net-tools
+          - gcc 
+          - libssl-dev
+          - libpam0g-dev
+          - make 
+          - libpcre3-dev 
+          - zlib1g-dev 
+          - libxml2-dev 
+          - libxslt-dev 
+          - libgd-dev 
+          - libgeoip-dev 
+          - libperl-dev
+          - openjdk-17-jdk
+          - openjdk-17-jre
+          - maven
+        state: present
+      
+    - name: copy /etc/profile 
+      ansible.builtin.copy:
+        src: ./resources/profile 
+        dest: /etc/profile 
+        owner: root
+        group: root
+        mode: '0644' 
+        
+    - name: copy .screenrc 
+      ansible.builtin.copy:
+        src: ./resources/screenrc 
+        dest: /root/.screenrc 
+        owner: root
+        group: root
+        mode: '0644'        
+        
+    # nginx ================================================================     
+    
+    - name: git checkout https://github.com/sto/ngx_http_auth_pam_module.git
+      ansible.builtin.git:
+          repo: https://github.com/sto/ngx_http_auth_pam_module.git
+          dest: /usr/local/src/mescedia/ngx_http_auth_pam_module/
+          version: v1.5.5        
+          
+    - name: git checkout https://github.com/openresty/headers-more-nginx-module.git
+      ansible.builtin.git:
+          repo: https://github.com/openresty/headers-more-nginx-module.git
+          dest: /usr/local/src/mescedia/headers-more-nginx-module/
+          version: v0.34    
+          
+    - name: git checkout https://github.com/arut/nginx-dav-ext-module.git
+      ansible.builtin.git:
+          repo: https://github.com/arut/nginx-dav-ext-module.git
+          dest: /usr/local/src/mescedia/nginx-dav-ext-module/
+          version: v3.0.0
+          
+    - name: git checkout https://github.com/nginx/nginx
+      ansible.builtin.git:
+          repo: https://github.com/nginx/nginx
+          dest: /usr/local/src/mescedia/nginx/
+          version: release-1.25.1          
+          
+    - name: compiling nginx (configure)
+      ansible.builtin.command: ./auto/configure --prefix=/usr/local/nginx --sbin-path=/usr/local/sbin/nginx --conf-path=/etc/nginx/nginx.conf  --error-log-path=/var/log/nginx/error.log  --http-log-path=/var/log/nginx/access.log  --pid-path=/run/nginx.pid  --lock-path=/run/lock/subsys/nginx --user=mescedia --group=mescedia-system --with-file-aio --with-http_ssl_module --with-http_v2_module  --with-http_image_filter_module --with-http_realip_module --with-http_addition_module --with-http_geoip_module --with-http_sub_module --with-http_gunzip_module --with-http_gzip_static_module  --with-http_random_index_module --with-http_secure_link_module  --with-http_stub_status_module --with-http_dav_module --with-pcre --with-http_auth_request_module --add-module=/usr/local/src/mescedia/headers-more-nginx-module --add-module=/usr/local/src/mescedia/ngx_http_auth_pam_module --add-module=/usr/local/src/mescedia/nginx-dav-ext-module
+      args:
+          chdir: /usr/local/src/mescedia/nginx/
+          creates: ./Makefile
+       
+    - name: compiling nginx (make)
+      ansible.builtin.command: make
+      args:
+          chdir: /usr/local/src/mescedia/nginx/
+          creates: /usr/local/src/mescedia/nginx/objs/nginx
+
+    - name: compiling nginx (make install)
+      ansible.builtin.command: make install
+      args:
+          chdir: /usr/local/src/mescedia/nginx/
+          creates: /etc/nginx
+          
+    - name: create webdav ssl certificate
+      ansible.builtin.command: /usr/bin/openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout /etc/ssl/private/nginx-webdav.key -out /etc/ssl/certs/nginx-webdav.crt -subj "/C=DE/ST=BW/L=RA/O=webdav/CN=www.mescedia.org"
+      args:
+          creates: /etc/ssl/private/nginx-webdav.key
+     
+    - name: create /opt/mescedia/webdav/users if it does not exist
+      ansible.builtin.file:
+        path: /opt/mescedia/webdav/users
+        state: directory
+        owner: root
+        group: root        
+        mode: '0755'
+
+    - name: copy webdav.conf 
+      ansible.builtin.copy:
+        src: ./resources/webdav.conf 
+        dest: /etc/nginx/webdav.conf 
+        owner: root
+        group: root
+        mode: '0644'          
+        
+    # vsftpd =====================================   
+    
+    - name: install vsftpd 
+      register: updatesys
+      apt:
+        update_cache: yes
+        name:
+          - vsftpd
+        state: present       
+        
+    - name: create vsftpd ssl certificate
+      ansible.builtin.command: /usr/bin/openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout /etc/ssl/private/mescedia-ftps.pem -out /etc/ssl/private/mescedia-ftps.pem -subj "/C=DE/ST=BW/L=RA/O=ftps/CN=www.mescedia.org"
+      args:
+          creates: /etc/ssl/private/mescedia-ftps.pem
+          
+    - name: copy vsftpd-implicit.conf 
+      ansible.builtin.copy:
+        src: ./resources/vsftpd-implicit.conf
+        dest: /etc/vsftpd-implicit.conf
+        owner: root
+        group: root
+        mode: '0644'  
+        
+    - name: create /opt/mescedia/ftps/users if it does not exist
+      ansible.builtin.file:
+        path: /opt/mescedia/ftps/users
+        state: directory
+        owner: root
+        group: root        
+        mode: '0755'        
+        
+    # logging =====================================    
+    
+    - name: install rsyslog 
+      register: updatesys
+      apt:
+        update_cache: yes
+        name:
+          - rsyslog
+        state: present    
+        
+    - name: copy rsyslog.conf 
+      ansible.builtin.copy:
+        src: ./resources/rsyslog.conf
+        dest: /etc/rsyslog.conf
+        owner: root
+        group: root
+        mode: '0644'  
+        
+    - name: copy /etc/init.d/rsyslog 
+      ansible.builtin.copy:
+        src: ./resources/initd.rsyslog 
+        dest: /etc/init.d/rsyslog 
+        owner: root
+        group: root
+        mode: '0755'
+    
+    - name: create /var/log/mescedia if it does not exist
+      ansible.builtin.file:
+        path: /var/log/mescedia
+        state: directory
+        owner: root
+        group: root        
+        mode: '0755' 
+
+    # openAS2 =====================================   
+    
+    - name: git checkout https://github.com/mescedia/mescedia-openAS2-Server.git
+      ansible.builtin.git:
+          repo: https://github.com/mescedia/mescedia-openAS2-Server.git
+          dest: /usr/local/src/mescedia/openAS2
+          force: true
+          version: mescedia-develop
+          
+    - name: compiling openAS2-server 
+      ansible.builtin.command: mvn clean install -DskipTests=true
+      args:
+          chdir: /usr/local/src/mescedia/openAS2/
+          creates: /usr/local/src/mescedia/openAS2/Server/target/dist/bin
+          
+    - name: copy start-openas2.sh
+      ansible.builtin.copy:
+        src: ./resources/start-openas2.sh 
+        dest: /usr/local/src/mescedia/openAS2/Server/target/dist/bin 
+        force: true
+        owner: root
+        group: root
+        mode: '0755'      
+        
+    - name: copy log4j2.xml
+      ansible.builtin.copy:
+        src: ./resources/log4j2.xml 
+        dest: /usr/local/src/mescedia/openAS2/Server/target/dist/bin 
+        force: true
+        owner: root
+        group: root
+        mode: '0755'
+        
+    - name: copy /etc/init.d/openas2
+      ansible.builtin.copy:
+        src: ./resources/openas2.d 
+        dest: /etc/init.d/openas2
+        owner: root
+        group: root
+        mode: '0755' 
+        
+    # mescedia-core =====================================       
+    
+    - name: git checkout https://github.com/mescedia/mescedia-core.git
+      ansible.builtin.git:
+          repo: https://github.com/mescedia/mescedia-core.git
+          dest: /usr/local/src/mescedia/mescedia-core
+          force: true
+          version: develop-camel-3.x-base
+          
+    - name: compiling mescedia-core
+      ansible.builtin.command: mvn clean install -DskipTests=true
+      args:
+          chdir: /usr/local/src/mescedia/mescedia-core/
+          creates: /usr/local/src/mescedia/mescedia-core/target          
+          
+    - name: copy /etc/init.d/mescedia-core
+      ansible.builtin.copy:
+        src: ./resources/mescedia-core.d 
+        dest: /etc/init.d/mescedia-core
+        owner: root
+        group: root
+        mode: '0755'          

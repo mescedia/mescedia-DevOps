@@ -1,0 +1,7 @@
+[servers]
+mescedia-server ansible_host=192.168.12.12 ansible_port=22222
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+
+
