@@ -34,6 +34,8 @@
         update_cache: yes
         name:
           - build-essential
+          - python3
+          - python3-apt
           - tzdata
           - mariadb-server
           - tree
