@@ -269,3 +269,14 @@
         owner: root
         group: root
         mode: '0755'          
+
+    # setup mariadb 
+    - name: start mariadb
+      ansible.builtin.command: /etc/init.d/mariadb start
+     
+    - name: create mescedia database & mescedia db user/password
+      ansible.builtin.command: > 
+        /usr/bin/mysql -e "create database mescedia; GRANT ALL ON mescedia.* TO 'mescedia'@'localhost' identified by 'mescedia'; FLUSH PRIVILEGES;"
+        
+     
+     
