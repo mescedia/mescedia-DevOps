@@ -16,7 +16,7 @@ Modify ./setup.cfg to your needs and run:
     /bin/bash ./setup.sh 
     
 
-License
+###### License
 
 This software is Open Source and licensed under the terms of the Apache License Version 2.0, or the GNU Lesser General Public License version 3.0 or later. You may use mescedia according to either of these licenses as is most appropriate for your project.
 
