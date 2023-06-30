@@ -11,8 +11,8 @@ docker_host=$(cat $cfgFile | grep -E "^docker_host=" | cut -d "=" -f 2)
 ansible_host=$(cat $cfgFile | grep -E "^ansible_host=" | cut -d "=" -f 2)
 ansible_port=$(cat $cfgFile | grep -E "^ansible_port=" | cut -d "=" -f 2)
 
-echo $ansible_host $ansible_port $docker_host $docker_network
-exit
+# echo $ansible_host $ansible_port $docker_host $docker_network
+# exit
 
 echo "                                       _  _         "
 echo "                                      | |(_)        "
