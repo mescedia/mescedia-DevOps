@@ -7,15 +7,7 @@
     | | | | | ||  __/\__ \| (__ |  __/| (_| || || (_| |
     |_| |_| |_| \___||___/ \___| \___| \__,_||_| \__,_|
                                  Open-Source EDI-Server
-                    
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES,
-    INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-    THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                    
+                                      
     
 This repo contains all setup tools required for mescedia-server installation.
 
@@ -24,3 +16,8 @@ Modify ./setup.cfg to your needs and run:
     /bin/bash ./setup.sh 
     
 
+License
+
+This software is Open Source and licensed under the terms of the Apache License Version 2.0, or the GNU Lesser General Public License version 3.0 or later. You may use mescedia according to either of these licenses as is most appropriate for your project.
+
+SPDX-License-Identifier: Apache-2.0 OR LGPL-3.0-or-later
