@@ -18,7 +18,9 @@
     THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                    
     
 This repo contains all setup tools required for mescedia-server installation.
+
 Modidy ./setup.cfg to your needs and run:
+
     /bin/bash ./setup.sh 
     
 
