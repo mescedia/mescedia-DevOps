@@ -17,5 +17,8 @@
     WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
     THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                    
     
+This repo contains all setup tools required for mescedia-server installation.
+Modidy ./setup.cfg to your needs and run:
+    /bin/bash ./setup.sh 
     
 
