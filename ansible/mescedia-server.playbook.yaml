@@ -46,7 +46,11 @@
           - net-tools
           - gcc 
           - libssl-dev
+          - aptitude
           - libpam0g-dev
+          - libpam-mysql
+          - lftp
+          - cadaver
           - make 
           - libpcre3-dev 
           - zlib1g-dev 
@@ -132,14 +136,39 @@
         owner: root
         group: root        
         mode: '0755'
+        
+    - name: create /etc/nginx/sites if it does not exist
+      ansible.builtin.file:
+        path: /etc/nginx/sites
+        state: directory
+        owner: root
+        group: root        
+        mode: '0755'        
 
     - name: copy webdav.conf 
       ansible.builtin.copy:
         src: ./resources/webdav.conf 
-        dest: /etc/nginx/webdav.conf 
+        dest: /etc/nginx/sites/webdav.conf 
         owner: root
         group: root
         mode: '0644'          
+
+    - name: copy nginx.conf 
+      ansible.builtin.copy:
+        src: ./resources/nginx.conf 
+        dest: /etc/nginx/nginx.conf 
+        owner: root
+        group: root
+        mode: '0644'    
+        
+    - name: copy /etc/init.d/nginx
+      ansible.builtin.copy:
+        src: ./resources/nginx.d
+        dest: /etc/init.d/nginx
+        owner: root
+        group: root
+        mode: '0755'
+        
         
     # vsftpd =====================================   
     
@@ -159,7 +188,7 @@
     - name: copy vsftpd-implicit.conf 
       ansible.builtin.copy:
         src: ./resources/vsftpd-implicit.conf
-        dest: /etc/vsftpd-implicit.conf
+        dest: /etc/vsftpd.conf
         owner: root
         group: root
         mode: '0644'  
@@ -268,15 +297,46 @@
         dest: /etc/init.d/mescedia-core
         owner: root
         group: root
+        mode: '0755'      
+        
+    - name: copy mescedia.sql
+      ansible.builtin.copy:
+        src: ./resources/mescedia.sql
+        dest: /tmp/mescedia.sql
+        owner: root
+        group: root
         mode: '0755'          
 
     # setup mariadb 
     - name: start mariadb
       ansible.builtin.command: /etc/init.d/mariadb start
+      args:
+        creates: /var/run/mysqld/mysqld.pid
      
     - name: create mescedia database & mescedia db user/password
       ansible.builtin.command: > 
-        /usr/bin/mysql -e "create database mescedia; GRANT ALL ON mescedia.* TO 'mescedia'@'localhost' identified by 'mescedia'; FLUSH PRIVILEGES;"
+        /usr/bin/mysql -e "create database IF NOT EXISTS mescedia; GRANT ALL ON mescedia.* TO 'mescedia'@'localhost' identified by 'mescedia'; FLUSH PRIVILEGES;"
+      args:
+        creates: /var/lib/mysql/mescedia/
         
-     
-     
+    - name: importing mariadb-data
+      ansible.builtin.shell: /usr/bin/mysql -u mescedia -pmescedia mescedia < /tmp/mescedia.sql
+      args:
+        creates: /var/lib/mysql/mescedia/formatAnalyserRule.frm
+        
+    # pam.d
+    - name: copy webdav-pam.d
+      ansible.builtin.copy:
+        src: ./resources/WebDAV.pam.d
+        dest: /etc/pam.d/webdav
+        owner: root
+        group: root
+        mode: '0755'    
+        
+    - name: copy vsftp-pam.d
+      ansible.builtin.copy:
+        src: ./resources/ftps.pam.d
+        dest: /etc/pam.d/ftps
+        owner: root
+        group: root
+        mode: '0755'         

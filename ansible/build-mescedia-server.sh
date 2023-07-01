@@ -8,8 +8,7 @@ fi
 ansible_host=$1
 ansible_port=$2
 
-
-cat << EOF > ./hosts
+cat << EOF > ./hosts.tmp
 [servers]
 mescedia-server ansible_host=$ansible_host ansible_port=$ansible_port
 [all:vars]
@@ -18,5 +17,5 @@ EOF
 
 echo "connecting $ansible_host:$ansible_port ..."
 
-ansible-playbook  -i ./hosts -u root  mescedia-server.playbook.yaml --ask-pass
+ansible-playbook  -i ./hosts.tmp -u root  mescedia-server.playbook.yaml --ask-pass
 
